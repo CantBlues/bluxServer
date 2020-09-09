@@ -67,7 +67,7 @@ func GetVideoFile(w http.ResponseWriter, r *http.Request) {
 func UpdateFiles(w http.ResponseWriter, r *http.Request) {
 	if isFilesChanged(PATH) {
 		delTargets, addTargets := compareFilesMd5()
-		go db.UpdateVideos(delTargets, addTargets)
+		db.UpdateVideos(delTargets, addTargets)
 		fmt.Fprintf(w, "1")
 	} else {
 		fmt.Fprintf(w, "0")
