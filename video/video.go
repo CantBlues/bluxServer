@@ -9,12 +9,10 @@ import (
 	"image/draw"
 	"image/jpeg"
 	"io/ioutil"
-	"math/rand"
 	"os"
 	"os/exec"
 	"strconv"
 	"sync"
-	"time"
 )
 
 var (
@@ -47,24 +45,17 @@ func dealVideo(filename, md5 string) {
 	width := videoInfo["width"].(int) / 2
 	height := videoInfo["height"].(int) / 2
 	step := duration / 100
-	var imgs []string
-	if _, err := os.Stat("tempImgs"); err != nil && os.IsNotExist(err) {
-		os.Mkdir("tempImgs", 666)
-	}
+	var imgs []*bytes.Buffer
 	if _, err := os.Stat(dstImgPath + `imgs`); err != nil && os.IsNotExist(err) {
 		os.Mkdir(dstImgPath+`imgs`, 666)
 	}
 	for i := 0; i < 100; i++ {
 		seek := step * i
 		imgBytes := framer(filename, convertTime(seek), width, height)
-		imgName := `tempImgs\` + getRandomString(10) + strconv.Itoa(i) + ".jpg"
-		err := ioutil.WriteFile(imgName, imgBytes.Bytes(), 666)
 		if i == 1 {
 			ioutil.WriteFile(dstImgPath+`imgs\`+md5+"thumb.jpg", imgBytes.Bytes(), 666)
 		}
-		if err == nil {
-			imgs = append(imgs, imgName)
-		}
+		imgs = append(imgs, imgBytes)
 	}
 	target := mergeImgs(imgs, width, height)
 	if _, err := os.Stat(dstImgPath + "imgs"); err != nil && os.IsNotExist(err) {
@@ -73,9 +64,6 @@ func dealVideo(filename, md5 string) {
 	file, _ := os.Create(dstImgPath + "imgs/" + md5 + "process.jpg")
 	defer file.Close()
 	jpeg.Encode(file, target, &jpeg.Options{Quality: 70})
-	for _, imgPath := range imgs {
-		os.Remove(imgPath)
-	}
 }
 
 func framer(filename, seek string, width, height int) *bytes.Buffer {
@@ -135,26 +123,10 @@ func convertTime(duration int) string {
 	return fmt.Sprintf("%02s:%02s:%02s", strconv.Itoa(hours), strconv.Itoa(minutes), strconv.Itoa(s))
 }
 
-func getRandomString(l int) string {
-	str := "0123456789abcdefghijklmnopqrstuvwxyz"
-	bytes := []byte(str)
-	result := []byte{}
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	for i := 0; i < l; i++ {
-		result = append(result, bytes[r.Intn(len(bytes))])
-	}
-	return string(result)
-}
-
-func mergeImgs(imgs []string, w, h int) *image.RGBA {
+func mergeImgs(imgs []*bytes.Buffer, w, h int) *image.RGBA {
 	target := image.NewRGBA(image.Rect(0, 0, w*10, h*10))
-	for i, imgPath := range imgs {
-		img, err := os.Open(imgPath)
-		defer img.Close()
-		if err != nil {
-			fmt.Println("open file failed!")
-		}
-		decodedImg, err := jpeg.Decode(img)
+	for i, img := range imgs {
+		decodedImg,_ := jpeg.Decode(img)
 		position := decodedImg.Bounds().Add(image.Pt((i%10)*w, (i/10)*h))
 		draw.Draw(target, position, decodedImg, decodedImg.Bounds().Min, draw.Src)
 	}
