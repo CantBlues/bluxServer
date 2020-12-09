@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"time"
 )
 
 // PATH is video file directory
@@ -27,11 +28,17 @@ type Video struct {
 }
 
 // DB ...
-func DB() (db *gorm.DB, err error) {
+var DB *gorm.DB
+
+func init()  {
 	dns := "root:34652402@tcp(127.0.0.1:3306)/blux?charset=utf8mb4&parseTime=True&loc=Local"
-	db, err = gorm.Open(mysql.Open(dns), &gorm.Config{})
-	fmt.Println("DBlink", db)
-	return
+	DB, _ = gorm.Open(mysql.Open(dns), &gorm.Config{})
+	fmt.Println("DBlink", DB)
+	sqlDB ,_ := DB.DB()
+	sqlDB.SetMaxIdleConns(10)
+	sqlDB.SetMaxOpenConns(100)
+	sqlDB.SetConnMaxLifetime(time.Hour)
+	
 }
 
 // Fetch videos by paginate
@@ -50,9 +57,8 @@ func Fetch(r *http.Request, body []byte) string {
 	}
 	request := new(query)
 	json.Unmarshal(body, &request)
-	db, _ := DB()
-	db.Model(&Video{}).Count(&count)
-	db.Scopes(paginate(request.Page)).Find(&videos)
+	DB.Model(&Video{}).Count(&count)
+	DB.Scopes(paginate(request.Page)).Find(&videos)
 	results := result{Data: videos, Count: count, Status: true}
 	resultByte, _ := json.Marshal(results)
 	return string(resultByte)
@@ -70,19 +76,18 @@ func ShutDownResponse() string {
 
 // UpdateVideos is accept a string list to delete in database
 func UpdateVideos(del, add map[string]string) {
-	db, _ := DB()
 	videos := []Video{}
 	var delList, thumbList, processList []string
 	for i := range del {
 		delList = append(delList, i)
 	}
-	db.Where("Md5 IN ?", delList).Delete(Video{})
+	DB.Where("Md5 IN ?", delList).Delete(Video{})
 	for i, v := range add {
 		name := regexp.MustCompile(`[^/\\\\]+$`).FindStringSubmatch(v)[0]
 		videos = append(videos, Video{Md5: i, Name: name, Path: v[28:]})
 	}
 	if len(videos) > 0 {
-		db.Create(&videos)
+		DB.Create(&videos)
 	}
 	video.HandleVideosChange(del, add)
 	for i := range add {
@@ -93,8 +98,8 @@ func UpdateVideos(del, add map[string]string) {
 			processList = append(processList, i)
 		}
 	}
-	db.Model(&Video{}).Where("Md5 IN ?", thumbList).Select("images").Update("images", true)
-	db.Model(&Video{}).Where("Md5 IN ?", processList).Select("process_image").Update("process_image", true)
+	DB.Model(&Video{}).Where("Md5 IN ?", thumbList).Select("images").Update("images", true)
+	DB.Model(&Video{}).Where("Md5 IN ?", processList).Select("process_image").Update("process_image", true)
 }
 
 func paginate(page int) func(db *gorm.DB) *gorm.DB {

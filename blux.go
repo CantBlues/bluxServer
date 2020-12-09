@@ -13,6 +13,7 @@ import (
 	"path"
 	"time"
 	_ "net/http/pprof"
+	//"syscall"
 )
 
 // PATH is video file directory
@@ -22,7 +23,8 @@ func main() {
 
 	startServe()
 
-	//debug(test)
+	// debug(test)
+
 }
 
 func test() {
@@ -48,12 +50,7 @@ func startServe() {
 	http.HandleFunc("/", GetVideoFile)
 	http.HandleFunc("/update", UpdateFiles)
 	http.HandleFunc("/shutdown", ShutDown)
-	http.ListenAndServe("192.168.0.174:9999", nil)
-}
-
-type result struct {
-	data   string
-	status bool
+	http.ListenAndServe(":9999", nil)
 }
 
 // GetVideoFile is get video rows from flutter
@@ -67,7 +64,7 @@ func GetVideoFile(w http.ResponseWriter, r *http.Request) {
 func UpdateFiles(w http.ResponseWriter, r *http.Request) {
 	if isFilesChanged(PATH) {
 		delTargets, addTargets := compareFilesMd5()
-		db.UpdateVideos(delTargets, addTargets)
+		go db.UpdateVideos(delTargets, addTargets)
 		fmt.Fprintf(w, "1")
 	} else {
 		fmt.Fprintf(w, "0")
@@ -76,7 +73,7 @@ func UpdateFiles(w http.ResponseWriter, r *http.Request) {
 
 // ShutDown means
 func ShutDown(w http.ResponseWriter, r *http.Request) {
-	exec.Command("cmd", "/C", "shutdown -s -t 0").Run()
+	exec.Command("cmd", "/C", "shutdown -s -hybrid -t 0").Run()
 	fmt.Fprintf(w, db.ShutDownResponse())
 }
 
@@ -151,7 +148,7 @@ func compareFilesMd5() (del, add map[string]string) {
 		md5, _ := MD5File(file)
 		filesMap[md5] = file
 	}
-	database, _ := db.DB()
+	database := db.DB
 	database.Select("Md5").Find(&videos)
 	for _, video := range videos {
 		rowsMap[video.Md5] = ""
