@@ -1,6 +1,7 @@
 package main
 
 import (
+	"blux/video"
 	"blux/db"
 	"crypto/md5"
 	"encoding/hex"
@@ -14,6 +15,7 @@ import (
 	"time"
 	_ "net/http/pprof"
 	//"syscall"
+	"sync"
 )
 
 // PATH is video file directory
@@ -21,17 +23,29 @@ const PATH string = db.PATH
 
 func main() {
 
-	startServe()
+	// startServe()
 
-	// debug(test)
+	debug(test)
 
 }
 
 func test() {
-	if isFilesChanged(PATH) {
-		delTargets, addTargets := compareFilesMd5()
-		db.UpdateVideos(delTargets, addTargets)
+	var wg sync.WaitGroup
+	var maxGoroutines int = 4
+	ch := make(chan int ,maxGoroutines)
+	for  i := 0; i < 100 ; i++  {
+		wg.Add(1)
+		ch <- 1
+		go func( i int) {
+			video.Deal("E:/LocalMediaCenter/awesome/IPX-411-tyker.xyz.mp4","C:/Users/wysla/Desktop/00/" + fmt.Sprintf("%d",i))
+			<- ch
+			wg.Done()
+		}(i)
 	}
+	wg.Wait()
+	//video.Deal("E:\\LocalMediaCenter\\awesome\\[BT-btt.com]20191001中文字幕纯净完整版60部\\[BT-btt.com]ABP-882(中文字幕纯净完整版)超！通透下流學園(中文字幕纯净完整版)CLASS 03 藤江史帆.mp4","C:/Users/wysla/Desktop/00/")
+
+
 
 }
 
