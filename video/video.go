@@ -28,7 +28,8 @@ func HandleVideosChange(del, add map[string]string) {
 		wg.Add(1)
 		ch <- 1
 		go func(v, i string) {
-			dealVideo(v,i)
+			Deal(v,dstImgPath + `imgs\` + i )
+			//dealVideo(v,i)
 			<- ch
 			wg.Done()
 		}(v,i)

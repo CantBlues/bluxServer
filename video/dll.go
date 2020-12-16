@@ -110,12 +110,12 @@ int start(char* path,char* dst)
         readFrame(pFormatCtx,pCodecCtx,&packet,pFrame,videoStream,i,dst,pDstFrame);
         seek += timeStep;
     }
-    char tmp[1024];
-    sprintf(tmp, "%stest.jpg",dst);
+    char dstProcess[1024];
+    sprintf(dstProcess, "%sprocess.jpg",dst);
 
-    saveDstFrame(tmp,pDstFrame);
+    saveDstFrame(dstProcess,pDstFrame);
 
-    // Read frames and save .    
+    // Read frames and save .
 
     av_frame_free(&pFrame);
 
@@ -134,23 +134,23 @@ int readFrame(AVFormatContext *pFormatCtx,AVCodecContext *pCodecCtx,AVPacket *pP
     while (av_read_frame(pFormatCtx, pPacket) >= 0) {
         // Is this a packet from the video stream?
         if (pPacket->stream_index == videoStream && pPacket->flags == 1) {
-            
+
             // Decode video frame
             avcodec_send_packet(pCodecCtx, pPacket);
             avcodec_receive_frame(pCodecCtx, pFrame);
-            
+
             if(pFrame->width > 0){
                 // Save the frame to disk.
-                
+
                 if(i == 0){
                     char tmp[1024];
-                    sprintf(tmp, "%stest%d.jpg",dst, i);
-                    //img_saveSinge(pFrame,tmp);
-                    
+                    sprintf(tmp, "%sthumb.jpg",dst);
+                    img_saveSinge(pFrame,tmp);
+
                     // save first img as thumb
                 }
                 writeDstFrame(pDstFrame,pFrame,i);
-                
+
                 av_packet_unref(pPacket);
                 break;
             }else{
@@ -178,7 +178,7 @@ int writeDstFrame(AVFrame *pDstFrame,AVFrame *pFrame,int pos){
     for (y = 0; y < height; y++) {
         memcpy(pDstFrame->data[0] + y*dstWidth + posX * width + posY * height * dstWidth, pFrame->data[0] + y*width, width);
     }
-    // Cb and Cr 
+    // Cb and Cr
     for (y = 0; y < height/2; y++) {
         memcpy(pDstFrame->data[1] + y*dstWidth/2 + posX * width/2 + posY * height * dstWidth / 4, pFrame->data[1] + y*width/2, width/2);
         memcpy(pDstFrame->data[2] + y*dstWidth/2 + posX * width/2 + posY * height * dstWidth / 4, pFrame->data[2] + y*width/2, width/2);
@@ -251,10 +251,10 @@ int saveDstFrame(char *out_filename,AVFrame *pFrame){
     AVPacket pkt;
     av_new_packet(&pkt, y_size * 3);
     // 编码数据
-    
 
 
-    
+
+
     ret = avcodec_send_frame(pCodeCtx, pFrame);
     if (ret < 0)
     {
@@ -290,7 +290,7 @@ int saveDstFrame(char *out_filename,AVFrame *pFrame){
 
 int img_saveSinge(AVFrame *pFrame, char *out_filename)
 { //编码保存图片
-    
+
     int width = pFrame->width;
     int height = pFrame->height;
     AVCodecContext *pCodeCtx = NULL;
@@ -405,23 +405,20 @@ int img_saveSinge(AVFrame *pFrame, char *out_filename)
 */
 import "C"
 import (
-    "fmt"
-    "unsafe"
-
+	// "fmt"
+	"unsafe"
 )
 
 // Deal video with dll
-func Deal(file string ,dstFile string) {
-    fmt.Println("start")
-    input := C.CString(file)
-    dst := C.CString(dstFile)
-    C.start(input,dst)
-    C.free(unsafe.Pointer(input))
-    C.free(unsafe.Pointer(dst))
-    
+func Deal(file string, dstFile string) {
+	//fmt.Println("start")
+	input := C.CString(file)
+	dst := C.CString(dstFile)
+	C.start(input, dst)
+	C.free(unsafe.Pointer(input))
+	C.free(unsafe.Pointer(dst))
+
 }
-
-
 
 // func mergeImgs1(imgs []*bytes.Buffer, w, h int) *image.RGBA {
 // 	target := image.NewRGBA(image.Rect(0, 0, w*10, h*10))

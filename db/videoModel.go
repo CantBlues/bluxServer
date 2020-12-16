@@ -11,6 +11,8 @@ import (
 	"os"
 	"regexp"
 	"time"
+	"syscall"
+	"runtime"
 )
 
 // PATH is video file directory
@@ -25,6 +27,7 @@ type Video struct {
 	Path         string
 	Images       bool
 	ProcessImage bool
+	CreatedAt time.Time
 }
 
 // DB ...
@@ -84,7 +87,7 @@ func UpdateVideos(del, add map[string]string) {
 	DB.Where("Md5 IN ?", delList).Delete(Video{})
 	for i, v := range add {
 		name := regexp.MustCompile(`[^/\\\\]+$`).FindStringSubmatch(v)[0]
-		videos = append(videos, Video{Md5: i, Name: name, Path: v[28:]})
+		videos = append(videos, Video{Md5: i, Name: name, Path: v[28:],CreatedAt:time.Unix(getFileCreateTime(v),0)})
 	}
 	if len(videos) > 0 {
 		DB.Create(&videos)
@@ -117,4 +120,16 @@ func paginate(page int) func(db *gorm.DB) *gorm.DB {
 		offset := (page - 1) * pageSize
 		return db.Offset(offset).Limit(pageSize)
 	}
+}
+
+func getFileCreateTime(path string) int64{
+    osType := runtime.GOOS
+    fileInfo, _ := os.Stat(path)
+    if osType == "windows" {
+        wFileSys := fileInfo.Sys().(*syscall.Win32FileAttributeData)
+        tNanSeconds := wFileSys.CreationTime.Nanoseconds()  /// 返回的是纳秒
+		tSec := tNanSeconds/1e9                             ///秒
+        return tSec;
+    }
+    return time.Now().Unix()
 }
