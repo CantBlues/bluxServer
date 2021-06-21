@@ -123,7 +123,7 @@ func MD5File(fileName string) (string, error) {
 func getVideoFiles(vpath string) (int, []string) {
 	rd, _ := ioutil.ReadDir(vpath)
 	videoFiles := []string{}
-	suffixList := []interface{}{".mp4", ".mkv", ".avi", ".MPG", ".rm", ".rmvb"}
+	suffixList := []interface{}{".mp4", ".mkv", ".avi", ".MPG", ".MPEG",  ".rm", ".rmvb",".mov",".wmv",  }
 	count := 0
 	for _, file := range rd {
 		if file.IsDir() {
