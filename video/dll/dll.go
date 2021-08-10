@@ -1,4 +1,4 @@
-package video
+package dll
 
 /*
 #include <libavcodec/avcodec.h>
@@ -7,7 +7,7 @@ package video
 #include <libavutil/imgutils.h>
 
 //包含header的目录
-#cgo CFLAGS: -IC:/ffmpeg_3.4.2/include
+#cgo CFLAGS: -I"C:/Program Files/ffmpeg-20200828-ccc7120-win64-static/ffmpeg_3.4.2/include"
 
 #cgo LDFLAGS:  -lavutil -lavcodec -lavformat -lswscale
 
