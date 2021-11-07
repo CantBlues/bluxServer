@@ -3,6 +3,7 @@ package main
 import (
 	"blux/video"
 	"blux/db"
+	"blux/usage"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -45,6 +46,8 @@ func startServe() {
 	http.HandleFunc("/checkonline", checkOnline)
 	http.HandleFunc("/getaudios", getAudios)
 	http.HandleFunc("/updateaudios", updateAudios)
+	http.HandleFunc("/usage/getLastDate", usage.GetLastDate)
+	http.HandleFunc("/usage/sendData", usage.ReceiveData)
 	http.ListenAndServe(":9999", nil)
 }
 
