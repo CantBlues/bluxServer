@@ -31,3 +31,11 @@ func UsageReceiveData(last int, usages []PhoneUsage, apps []PhoneApp) {
 		DB.Create(&apps)
 	}
 }
+
+func UsageGetAll() ([]PhoneApp, []PhoneUsage) {
+	var apps []PhoneApp
+	var usages []PhoneUsage
+	DB.Find(&apps)
+	DB.Find(&usages)
+	return apps, usages
+}

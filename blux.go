@@ -48,6 +48,7 @@ func startServe() {
 	http.HandleFunc("/updateaudios", updateAudios)
 	http.HandleFunc("/usage/getLastDate", usage.GetLastDate)
 	http.HandleFunc("/usage/sendData", usage.ReceiveData)
+	http.HandleFunc("/usage/getData", usage.GetData)
 	http.ListenAndServe(":9999", nil)
 }
 
