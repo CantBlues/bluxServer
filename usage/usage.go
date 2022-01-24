@@ -36,5 +36,7 @@ func GetData(w http.ResponseWriter, r *http.Request) {
 	apps, usages := db.UsageGetAll()
 	data, _ := json.Marshal(ret{Apps: apps, Usage: usages})
 	w.Header().Set("Access-Control-Allow-Origin","*")
+	w.Header().Add("Access-Control-Allow-Headers", "Content-Type")
+	w.Header().Set("content-type", "application/json")  
 	fmt.Fprint(w, string(data))
 }
