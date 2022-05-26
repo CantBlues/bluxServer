@@ -1,5 +1,4 @@
 package dll
-
 /*
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
@@ -9,7 +8,7 @@ package dll
 //包含header的目录
 #cgo CFLAGS: -I"C:/Program Files/ffmpeg-20200828-ccc7120-win64-static/ffmpeg_3.4.2/include"
 
-#cgo LDFLAGS:  -lavutil -lavcodec -lavformat -lswscale
+#cgo LDFLAGS:  -lavutil-56  -lavcodec-58  -lavformat-58 -lswscale-5
 
 void saveFrame(AVFrame*,int,int,int);
 
