@@ -11,6 +11,10 @@ package dll
 #cgo LDFLAGS:  -lavutil-56  -lavcodec-58  -lavformat-58 -lswscale-5
 
 void saveFrame(AVFrame*,int,int,int);
+int readFrame(AVFormatContext *pFormatCtx,AVCodecContext *pCodecCtx,AVPacket *pPacket,AVFrame *pFrame,int videoStream,int i,char* dst,AVFrame *pDstFrame);
+int saveDstFrame(char *out_filename,AVFrame *pFrame);
+int img_saveSinge(AVFrame *pFrame, char *out_filename);
+int writeDstFrame(AVFrame *pDstFrame,AVFrame *pFrame,int pos);
 
 int start(char* path,char* dst)
 {
