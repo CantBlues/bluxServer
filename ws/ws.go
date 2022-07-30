@@ -2,7 +2,7 @@ package ws
 
 import (
 	"encoding/json"
-	"fmt"
+	"log"
 	"github.com/gorilla/websocket"
 	"net/http"
 )
@@ -24,12 +24,12 @@ func WsEndpoint(w http.ResponseWriter, r *http.Request) {
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 
 	err = ws.WriteMessage(1, []byte("Hi Client!"))
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 	reader(ws)
 }
@@ -44,18 +44,18 @@ func reader(conn *websocket.Conn) {
 			// if _, k:= err.(*websocket.CloseError);k {
 			delete(connMap, replyMsg.Uid)
 			// }
-			fmt.Println(err)
+			log.Println(err)
 			return
 		}
 
 		err = json.Unmarshal(p, &replyMsg)
 		if err != nil {
-			fmt.Println("json decode error", err)
+			log.Println("json decode error", err)
 		}
 
 		if replyMsg.Type == "login" && replyMsg.Uid != "" {
 			connMap[replyMsg.Uid] = conn
-			fmt.Println(connMap)
+			log.Println(connMap)
 		}
 		for k, v := range connMap {
 			go sendMessage(replyMsg, v, k)
@@ -87,7 +87,7 @@ func sendMessage(replyMsg MsgConfig, conn *websocket.Conn, connUid string) {
 	}
 
 	if err := conn.WriteMessage(1, []byte(msg)); err != nil {
-		fmt.Println("Can't send", err)
+		log.Println("Can't send", err)
 	}
 
 }

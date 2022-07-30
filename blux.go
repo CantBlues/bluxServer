@@ -1,17 +1,44 @@
 package main
 
 import (
-	"blux/video"
 	"blux/db"
+	"blux/video"
 	"blux/ws"
-	"fmt"
 	"io/ioutil"
+	"log"
+	"fmt"
 	"net/http"
+	_ "net/http/pprof"
+	"os"
 	"os/exec"
 	"time"
-	_ "net/http/pprof"
-
+	"gopkg.in/yaml.v2"
 )
+type YamlConfig struct{
+	LogPath string `yaml:"log_path"`
+}
+var Config YamlConfig ;
+func init() {
+	loadConfig()
+	logFile, err := os.OpenFile(Config.LogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil {
+		log.Panic("打开日志文件异常")
+	}
+	log.SetOutput(logFile)
+}
+
+func loadConfig(){
+	data,err := ioutil.ReadFile("./conf.yaml")
+	if err!= nil {
+		log.Panic(err)
+	}
+	err = yaml.Unmarshal(data,&Config)
+	if err!= nil {
+		log.Panic(err)
+	}
+}
+
+
 
 // PATH is video file directory
 const PATH string = db.PATH
@@ -47,12 +74,11 @@ func startServe() {
 	http.HandleFunc("/getaudios", getAudios)
 	http.HandleFunc("/updateaudios", updateAudios)
 
-	http.HandleFunc("/ws",ws.WsEndpoint)
+	http.HandleFunc("/ws", ws.WsEndpoint)
 	http.ListenAndServe(":9999", nil)
 }
 
-
-func checkOnline(w http.ResponseWriter, r *http.Request)  {
+func checkOnline(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "online")
 }
 
@@ -92,4 +118,3 @@ func shutDown(w http.ResponseWriter, r *http.Request) {
 	exec.Command("cmd", "/C", "shutdown -s -hybrid -t 0").Run()
 	fmt.Fprintf(w, db.ShutDownResponse())
 }
-
