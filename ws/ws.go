@@ -2,8 +2,8 @@ package ws
 
 import (
 	"encoding/json"
-	"log"
 	"github.com/gorilla/websocket"
+	"log"
 	"net/http"
 )
 
@@ -23,11 +23,6 @@ var connMap = make(map[string]*websocket.Conn)
 func WsEndpoint(w http.ResponseWriter, r *http.Request) {
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	ws, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Println(err)
-	}
-
-	err = ws.WriteMessage(1, []byte("Hi Client!"))
 	if err != nil {
 		log.Println(err)
 	}
@@ -72,18 +67,19 @@ func reader(conn *websocket.Conn) {
 }
 
 func sendMessage(replyMsg MsgConfig, conn *websocket.Conn, connUid string) {
-	// msg := replyMsg.Uid + "说:" + replyMsg.Msg
-	msg := replyMsg.Msg
-	if connUid == replyMsg.Uid {
 
+	if connUid == replyMsg.Uid {
 		if replyMsg.Type == "login" {
-			msg = "连接成功"
+			replyMsg.Msg = "连接成功"
+			replyMsg.Type = "msg"
 		} else {
 			return
 			// todo here can be verify client message
-			// msg = "你说：" + replyMsg.Msg
 		}
-
+	}
+	msg, err := json.Marshal(replyMsg)
+	if err != nil {
+		log.Println(err)
 	}
 
 	if err := conn.WriteMessage(1, []byte(msg)); err != nil {

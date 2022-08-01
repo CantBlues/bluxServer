@@ -4,20 +4,23 @@ import (
 	"blux/db"
 	"blux/video"
 	"blux/ws"
+	"fmt"
+	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
-	"fmt"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
 	"os/exec"
 	"time"
-	"gopkg.in/yaml.v2"
 )
-type YamlConfig struct{
+
+type YamlConfig struct {
 	LogPath string `yaml:"log_path"`
 }
-var Config YamlConfig ;
+
+var Config YamlConfig
+
 func init() {
 	loadConfig()
 	logFile, err := os.OpenFile(Config.LogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
@@ -27,18 +30,16 @@ func init() {
 	log.SetOutput(logFile)
 }
 
-func loadConfig(){
-	data,err := ioutil.ReadFile("./conf.yaml")
-	if err!= nil {
+func loadConfig() {
+	data, err := ioutil.ReadFile("./conf.yaml")
+	if err != nil {
 		log.Panic(err)
 	}
-	err = yaml.Unmarshal(data,&Config)
-	if err!= nil {
+	err = yaml.Unmarshal(data, &Config)
+	if err != nil {
 		log.Panic(err)
 	}
 }
-
-
 
 // PATH is video file directory
 const PATH string = db.PATH
