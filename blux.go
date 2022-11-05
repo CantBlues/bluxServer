@@ -4,8 +4,9 @@ import (
 	"blux/db"
 	"blux/video"
 	"blux/ws"
+	"bytes"
+	"encoding/json"
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -13,10 +14,15 @@ import (
 	"os"
 	"os/exec"
 	"time"
+
+	"github.com/CantBlues/v2sub/ping"
+	"github.com/CantBlues/v2sub/types"
+	"gopkg.in/yaml.v2"
 )
 
 type YamlConfig struct {
-	LogPath string `yaml:"log_path"`
+	LogPath    string `yaml:"log_path"`
+	RouterAddr string `yaml:"router"`
 }
 
 var Config YamlConfig
@@ -75,24 +81,26 @@ func startServe() {
 	http.HandleFunc("/getaudios", getAudios)
 	http.HandleFunc("/updateaudios", updateAudios)
 
+	http.HandleFunc("/v2ray/detect", detectV2ray)
+
 	http.HandleFunc("/ws", ws.WsEndpoint)
 	http.ListenAndServe(":9999", nil)
 }
 
 func checkOnline(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "online")
+	fmt.Fprint(w, "online")
 }
 
 func getVideos(w http.ResponseWriter, r *http.Request) {
 	body, _ := ioutil.ReadAll(r.Body)
 	ret := db.Fetch(r, body)
-	fmt.Fprintf(w, ret)
+	fmt.Fprint(w, ret)
 }
 
 func getAudios(w http.ResponseWriter, r *http.Request) {
 	body, _ := ioutil.ReadAll(r.Body)
 	ret := db.FetchAudio(r, body)
-	fmt.Fprintf(w, ret)
+	fmt.Fprint(w, ret)
 }
 
 func updateVideos(w http.ResponseWriter, r *http.Request) {
@@ -117,5 +125,38 @@ func updateAudios(w http.ResponseWriter, r *http.Request) {
 
 func shutDown(w http.ResponseWriter, r *http.Request) {
 	exec.Command("cmd", "/C", "shutdown -s -hybrid -t 0").Run()
-	fmt.Fprintf(w, db.ShutDownResponse())
+	fmt.Fprint(w, db.ShutDownResponse())
+}
+
+func detectV2ray(w http.ResponseWriter, r *http.Request) {
+	res, err := http.Get(Config.RouterAddr + "fetch")
+	if err != nil {
+		log.Println("Failed to fetch config from router", err)
+		return
+	}
+	defer res.Body.Close()
+
+	b, _ := ioutil.ReadAll(res.Body)
+	var data types.Config
+	err = json.Unmarshal(b, &data)
+
+	if err != nil {
+		log.Println("Failed to Unmarshall json data", err)
+		return
+	}
+	go func() {
+		ping.TestAll(data.Nodes)
+		buff := bytes.NewBuffer(nil)
+		encoder := json.NewEncoder(buff)
+
+		err := encoder.Encode(data.Nodes)
+		if err != nil {
+			log.Println("Failed to encode json data", err)
+			return
+		}
+
+		http.Post(Config.RouterAddr+"nodes/receive", "application/json", buff)
+	}()
+
+	w.Write([]byte{'1'})
 }

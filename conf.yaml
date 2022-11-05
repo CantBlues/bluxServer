@@ -1,1 +1,2 @@
 log_path: c:/Server/bluxGo.log
+router: http://192.168.0.1:89/
