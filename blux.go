@@ -82,6 +82,7 @@ func startServe() {
 	http.HandleFunc("/updateaudios", updateAudios)
 
 	http.HandleFunc("/v2ray/detect", detectV2ray)
+	http.HandleFunc("/v2ray/detect/nodes", detectV2rayNodes)
 
 	http.HandleFunc("/ws", ws.WsEndpoint)
 	http.ListenAndServe(":9999", nil)
@@ -158,6 +159,54 @@ func detectV2ray(w http.ResponseWriter, r *http.Request) {
 		go http.Post("http://blux.lanbin.com/api/v2ray/nodes/save", "application/json", buff)
 		http.Post(Config.RouterAddr+"nodes/receive", "application/json", buff)
 	}()
+
+	w.Write([]byte{'1'})
+}
+
+func detectV2rayNodes(w http.ResponseWriter, r *http.Request) {
+	type req struct {
+		Source string      `json:"source"`
+		Nodes  types.Nodes `json:"nodes"`
+	}
+
+	var request req
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&request)
+	if err != nil {
+		log.Println("Failed to Unmarshall json data", err)
+		return
+	}
+	defer r.Body.Close()
+
+	source := request.Source
+	nodes := request.Nodes
+
+	go func(s string, n types.Nodes) {
+		ping.TestAll(n)
+		buff := bytes.NewBuffer(nil)
+		encoder := json.NewEncoder(buff)
+
+		err := encoder.Encode(n)
+		if err != nil {
+			log.Println("Failed to encode json data", err)
+			return
+		}
+
+		go http.Post("http://blux.lanbin.com/api/v2ray/nodes/save", "application/json", buff)
+
+		switch s {
+		case "instant":
+			http.Post(Config.RouterAddr+"nodes/receive", "application/json", buff)
+			break
+		case "mark":
+			http.Post(Config.RouterAddr+"nodes/receiveMark", "application/json", buff)
+			break
+		case "history":
+			break
+		default:
+			break
+		}
+	}(source, nodes)
 
 	w.Write([]byte{'1'})
 }
