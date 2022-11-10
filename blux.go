@@ -191,21 +191,21 @@ func detectV2rayNodes(w http.ResponseWriter, r *http.Request) {
 			log.Println("Failed to encode json data", err)
 			return
 		}
-
-		go http.Post("http://blux.lanbin.com/api/v2ray/nodes/save", "application/json", buff)
+		b, _ := ioutil.ReadAll(buff)
+		data1 := bytes.NewBuffer(b)
+		data2 := bytes.NewBuffer(b)
 
 		switch s {
 		case "instant":
-			http.Post(Config.RouterAddr+"nodes/receive", "application/json", buff)
-			break
+			http.Post(Config.RouterAddr+"nodes/receive", "application/json", data1)
 		case "mark":
-			http.Post(Config.RouterAddr+"nodes/receiveMark", "application/json", buff)
-			break
+			http.Post(Config.RouterAddr+"nodes/receiveMark", "application/json", data1)
 		case "history":
 			break
 		default:
 			break
 		}
+		http.Post("http://blux.lanbin.com/api/v2ray/nodes/save", "application/json", data2)
 	}(source, nodes)
 
 	w.Write([]byte{'1'})
